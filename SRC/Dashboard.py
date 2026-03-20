@@ -307,10 +307,9 @@ try:
         if os.path.exists(caminho_escudo):
             img = Image.open(caminho_escudo)
 
-            # Redução de 25% do taamnho da imagem
+            # O segredo é usar int() para arredondar o resultado
             nova_largura = int(img.size * 0.75)
 
-            # Exibe na sidebar ANTES do cabeçalho de filtros
             st.sidebar.image(img, width=nova_largura)
         else:
             st.sidebar.warning("Escudo não encontrado na pasta IMAGES.")
@@ -328,8 +327,10 @@ try:
     # 4. ÁREA PRINCIPAL
     if not df_partida.empty:
         if not df_partida.empty:
-            # Acessamos a linha 0 e usamos o método do Pandas para obter o valor
-            nome_adversario = df_partida.iloc['ADVERSARIO'] if 'ADVERSARIO' in df_partida.columns else 'N/A'
+            try:
+                nome_adversario = df_partida['ADVERSARIO'].values
+            except:
+                nome_adversario = "N/A"
 
             st.info(f"🏟️ Partida: {nome_adversario}")
 
