@@ -283,76 +283,57 @@ class AbaEquipe:
 
 # --- EXECUÇÃO PRINCIPAL ---
 try:
-    # 1. Localizacao dos arquivos
+    # 1. Caminhos Relativos (Ajustados para funcionar no GitHub e Local)
     diretorio_script = os.path.dirname(os.path.abspath(__file__))
     diretorio_raiz = os.path.dirname(diretorio_script)
-
     caminho_excel = os.path.join(diretorio_raiz, "Data", "Jogos Serra.xlsx")
 
-    # Carregamento do DataFrame
     df = pd.read_excel(caminho_excel)
-
-    # Limpeza das colunas e data
     df.columns = [str(col).strip().upper() for col in df.columns]
-    if 'DATA' in df.columns:
-        df['DATA'] = pd.to_datetime(df['DATA'])
-    else:
-        st.error("Coluna 'DATA' não encontrada no Excel.")
-        st.stop()
+    df['DATA'] = pd.to_datetime(df['DATA'])
 
-    # 2. ESCUDO NO TOPO DA SIDEBAR (Canto Superior Esquerdo)
+    # --- 2. ESCUDO (Correção do erro 'non-int of type float') ---
     try:
         caminho_escudo = os.path.join(diretorio_raiz, "IMAGES", "Escudo Serra Branca.PNG")
-
         if os.path.exists(caminho_escudo):
             img = Image.open(caminho_escudo)
 
-            # O segredo é usar int() para arredondar o resultado
-            nova_largura = int(img.size * 0.75)
+            # CORREÇÃO: Usamos // para divisão inteira ou int() no resultado
+            largura_original = img.size
+            nova_largura = int(largura_original * 0.75)
 
-            # Exibe na sidebar
             st.sidebar.image(img, width=nova_largura)
-        else:
-            st.sidebar.warning("Escudo não encontrado na pasta IMAGES.")
     except Exception as e:
         st.sidebar.error(f"Erro ao processar imagem: {e}")
 
-    # 3. CONFIGURAÇÃO DA SIDEBAR (Filtros únicos)
+    # --- 3. FILTROS ---
     st.sidebar.header("Filtros")
-
     data_opcoes = df['DATA'].dt.strftime('%d/%m/%Y').unique()
-    data_sel_str = st.sidebar.selectbox("Selecione a Data", data_opcoes, key="data_principal")
+    data_sel_str = st.sidebar.selectbox("Selecione a Data", data_opcoes, key="data_filtro")
 
     df_partida = df[df['DATA'].dt.strftime('%d/%m/%Y') == data_sel_str]
 
-    # 4. ÁREA PRINCIPAL
+    # --- 4. ÁREA PRINCIPAL (Correção do erro de lista de 'BOTAFOGO') ---
     if not df_partida.empty:
-        try:
-            nome_adversario = df_partida['ADVERSARIO'].values
-        except:
-            nome_adversario = "N/A"
+        # CORREÇÃO: Pegamos apenas o primeiro valor (.iloc) da coluna em vez da série toda
+        nome_adv = df_partida['ADVERSARIO'].iloc
+        st.info(f"🏟️ Partida: {nome_adv}")
 
-        st.info(f"🏟️ Partida: {nome_adversario}")
-
-        # Tabs de navegação
         tab1, tab2 = st.tabs(["👤 Desempenho Atleta", "👥 Comparativo Equipe"])
 
         with tab1:
             atleta_sel = st.selectbox(
                 "Selecione o Atleta",
                 sorted(df_partida['ATLETA'].unique()),
-                key="atleta_aba_individual"
+                key="atleta_sel_aba"
             )
-            # Renderização da aba
             AbaDesempenho(df_partida, df, atleta_sel).render()
 
         with tab2:
-            # Renderização da aba da equipe
+            # Aqui você pode chamar a lógica daquela tabela estilo Excel que planejou
             AbaEquipe(df_partida).render()
     else:
-        st.warning("Nenhum dado encontrado para a data selecionada.")
+        st.warning("Nenhum dado encontrado para esta data.")
 
-except FileNotFoundError:
-    st.error(f"Erro: Arquivo Excel não encontrado. Verifique se a pasta 'Data' está correta no GitHub.")
 except Exception as e:
     st.error(f"Erro crítico no sistema: {e}")
