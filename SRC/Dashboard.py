@@ -310,6 +310,7 @@ try:
             # O segredo é usar int() para arredondar o resultado
             nova_largura = int(img.size * 0.75)
 
+            # Exibe na sidebar
             st.sidebar.image(img, width=nova_largura)
         else:
             st.sidebar.warning("Escudo não encontrado na pasta IMAGES.")
@@ -326,13 +327,12 @@ try:
 
     # 4. ÁREA PRINCIPAL
     if not df_partida.empty:
-        if not df_partida.empty:
-            try:
-                nome_adversario = df_partida['ADVERSARIO'].values
-            except:
-                nome_adversario = "N/A"
+        try:
+            nome_adversario = df_partida['ADVERSARIO'].values
+        except:
+            nome_adversario = "N/A"
 
-            st.info(f"🏟️ Partida: {nome_adversario}")
+        st.info(f"🏟️ Partida: {nome_adversario}")
 
         # Tabs de navegação
         tab1, tab2 = st.tabs(["👤 Desempenho Atleta", "👥 Comparativo Equipe"])
