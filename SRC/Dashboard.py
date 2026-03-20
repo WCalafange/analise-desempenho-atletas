@@ -21,7 +21,7 @@ from PIL import Image
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(layout="wide", page_title="Análise de Desempenho")
 
-# Injeção de CSS para cores Azul Marinho e Azul Médio (caixas)
+# CSS para cores
 st.markdown(
     """
     <style>
@@ -117,7 +117,7 @@ class AbaDesempenho:
             st.header(f"📊 Análise Individual: {self.atleta}")
             posicao_atual = df_atleta['POSICAO'].iloc[0]
 
-            # --- 1. Gráfico de Colunas Agrupadas ---
+            # 1. Gráfico de Colunas Agrupadas
             st.subheader(f"Comparativo de Fundamentos: {posicao_atual}")
             metricas_especificas = self.METRICAS_POR_POSICAO.get(posicao_atual, ['INDICE'])
             metricas_especificas = [m for m in metricas_especificas if m in df_atleta.columns]
@@ -141,10 +141,10 @@ class AbaDesempenho:
                                       font=dict(color='white'))
             st.plotly_chart(fig_colunas, use_container_width=True)
 
-            # --- 2. Evolução Temporal ---
-            st.subheader("Evolução do Índice")  # Mantemos apenas o título do Streamlit
+            # 2. Evolução Temporal
+            st.subheader("Evolução do Índice")
 
-            # Preparação dos dados (mantida)
+            # Preparação dos dados
             df_historico = self.df_completo[self.df_completo['ATLETA'] == self.atleta].sort_values('DATA').copy()
             df_historico['DATA_STR'] = df_historico['DATA'].dt.strftime('%d/%m/%Y')
 
@@ -154,7 +154,6 @@ class AbaDesempenho:
                 ].groupby('DATA')['INDICE'].mean().reset_index()
             df_media_hist['DATA_STR'] = df_media_hist['DATA'].dt.strftime('%d/%m/%Y')
 
-            # Criamos o gráfico SEM o parâmetro title interno
             fig_evolucao = px.line(
                 df_historico,
                 x='DATA_STR',
@@ -178,7 +177,7 @@ class AbaDesempenho:
                 font=dict(color='white'),
                 xaxis=dict(
                     type='category',
-                    title_text='DATA',  # <--- REMOVE O "DATA_STR"
+                    title_text='DATA',
                     gridcolor='rgba(255, 255, 255, 0.1)'
                 ),
                 yaxis=dict(
@@ -187,7 +186,7 @@ class AbaDesempenho:
                     zerolinecolor='rgba(255, 255, 255, 0.2)'
                 ),
                 showlegend=True,
-                margin=dict(t=10)  # Reduz a margem superior já que o título agora é do Streamlit
+                margin=dict(t=10)
             )
 
             st.plotly_chart(fig_evolucao, use_container_width=True)
@@ -203,7 +202,7 @@ class AbaDesempenho:
                 with cols[i % 2]:
                     fig_mini = go.Figure()
 
-                    # Lógica de formatação do rótulo
+                    # Formatação do rótulo
                     if metrica.startswith('%'):
                         texto_pontos = df_historico[metrica].apply(lambda x: f"{x:.1f}%")
                     else:
@@ -216,7 +215,7 @@ class AbaDesempenho:
                         mode='lines+markers+text',
                         text=texto_pontos,
                         textposition="top center",
-                        textfont=dict(size=11, color='black'),  # <--- Valores em PRETO
+                        textfont=dict(size=11, color='black'),
                         line=dict(color='#B22222', width=3),
                         marker=dict(symbol='square', size=8, color='#B22222'),
                         name=metrica
@@ -243,7 +242,7 @@ class AbaDesempenho:
 
                         yaxis=dict(
                             showgrid=True,
-                            gridcolor='rgba(0, 0, 0, 0.15)',  # <--- Grade um pouco mais escura (0.15)
+                            gridcolor='rgba(0, 0, 0, 0.15)',
                             showticklabels=False,
                             zeroline=False,
                             range=[df_historico[metrica].min() * 0.7, df_historico[metrica].max() * 1.3]
@@ -284,11 +283,10 @@ class AbaEquipe:
 
 # --- EXECUÇÃO PRINCIPAL ---
 try:
-    # 1. LOCALIZAÇÃO ROBUSTA DOS ARQUIVOS (Para funcionar no GitHub/Nuvem)
+    # 1. Localizacao dos arquivos
     diretorio_script = os.path.dirname(os.path.abspath(__file__))
     diretorio_raiz = os.path.dirname(diretorio_script)
 
-    # Caminho do Excel
     caminho_excel = os.path.join(diretorio_raiz, "Data", "Jogos Serra.xlsx")
 
     # Carregamento do DataFrame
@@ -302,14 +300,14 @@ try:
         st.error("Coluna 'DATA' não encontrada no Excel.")
         st.stop()
 
-    # --- 2. ESCUDO NO TOPO DA SIDEBAR (Canto Superior Esquerdo) ---
+    # 2. ESCUDO NO TOPO DA SIDEBAR (Canto Superior Esquerdo)
     try:
         caminho_escudo = os.path.join(diretorio_raiz, "IMAGES", "Escudo Serra Branca.PNG")
 
         if os.path.exists(caminho_escudo):
             img = Image.open(caminho_escudo)
 
-            # Redução de 25% (mantendo 75% da largura original)
+            # Redução de 25% do taamnho da imagem
             nova_largura = int(img.size * 0.75)
 
             # Exibe na sidebar ANTES do cabeçalho de filtros
@@ -319,31 +317,32 @@ try:
     except Exception as e:
         st.sidebar.error(f"Erro ao processar imagem: {e}")
 
-    # --- 3. CONFIGURAÇÃO DA SIDEBAR (Filtros únicos) ---
+    # 3. CONFIGURAÇÃO DA SIDEBAR (Filtros únicos)
     st.sidebar.header("Filtros")
 
     data_opcoes = df['DATA'].dt.strftime('%d/%m/%Y').unique()
-    # Adicionada a 'key' para evitar erro de Duplicate ID
     data_sel_str = st.sidebar.selectbox("Selecione a Data", data_opcoes, key="data_principal")
 
     df_partida = df[df['DATA'].dt.strftime('%d/%m/%Y') == data_sel_str]
 
-    # --- 4. ÁREA PRINCIPAL ---
+    # 4. ÁREA PRINCIPAL
     if not df_partida.empty:
-        # Título da partida (Removido o escudo pequeno que ficava à direita)
-        st.info(f"🏟️ Partida: {df_partida.iloc.get('ADVERSARIO', 'N/A')}")
+        if not df_partida.empty:
+            # Acessamos a linha 0 e usamos o método do Pandas para obter o valor
+            nome_adversario = df_partida.iloc['ADVERSARIO'] if 'ADVERSARIO' in df_partida.columns else 'N/A'
+
+            st.info(f"🏟️ Partida: {nome_adversario}")
 
         # Tabs de navegação
         tab1, tab2 = st.tabs(["👤 Desempenho Atleta", "👥 Comparativo Equipe"])
 
         with tab1:
-            # Adicionada a 'key' única para o seletor de atleta
             atleta_sel = st.selectbox(
                 "Selecione o Atleta",
                 sorted(df_partida['ATLETA'].unique()),
                 key="atleta_aba_individual"
             )
-            # Renderização da aba (Certifique-se que a classe AbaDesempenho está definida)
+            # Renderização da aba
             AbaDesempenho(df_partida, df, atleta_sel).render()
 
         with tab2:
