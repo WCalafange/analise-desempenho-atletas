@@ -282,7 +282,6 @@ class AbaEquipe:
 
 
 # --- EXECUÇÃO PRINCIPAL ---
-# --- EXECUÇÃO PRINCIPAL ---
 try:
     # 1. Caminhos Relativos (Essencial para o Deploy funcionar)
     diretorio_script = os.path.dirname(os.path.abspath(__file__))
@@ -299,11 +298,11 @@ try:
         if os.path.exists(caminho_escudo):
             img = Image.open(caminho_escudo)
 
-            # CORREÇÃO: Forçamos o resultado a ser um número INTEIRO
-            largura_original = img.size
-            nova_largura = int(largura_original * 0.75)
-
-            st.sidebar.image(img, width=nova_largura)
+            # Renderiza a imagem com largura fixa de 220 pixels
+            # O Streamlit ajusta a altura automaticamente para manter a proporção
+            st.sidebar.image(img, width=220)
+        else:
+            st.sidebar.warning("Arquivo de escudo não encontrado no caminho especificado.")
     except Exception as e:
         st.sidebar.error(f"Erro na imagem: {e}")
 
@@ -316,9 +315,7 @@ try:
 
     # --- 4. ÁREA PRINCIPAL (Resolução do erro iLocIndexer) ---
     if not df_partida.empty:
-        # CORREÇÃO: Pegamos o VALOR da primeira linha da coluna adversário
-        # .values garante que pegamos o texto e não o objeto de busca
-        nome_adv = df_partida['ADVERSARIO'].values
+        nome_adv = str(df_partida['ADVERSARIO'].iloc)
         st.info(f"🏟️ Partida: {nome_adv}")
 
         tab1, tab2 = st.tabs(["👤 Desempenho Atleta", "👥 Comparativo Equipe"])
