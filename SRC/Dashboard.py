@@ -282,8 +282,9 @@ class AbaEquipe:
 
 
 # --- EXECUÇÃO PRINCIPAL ---
+# --- EXECUÇÃO PRINCIPAL ---
 try:
-    # 1. Caminhos Relativos (Ajustados para funcionar no GitHub e Local)
+    # 1. Caminhos Relativos (Essencial para o Deploy funcionar)
     diretorio_script = os.path.dirname(os.path.abspath(__file__))
     diretorio_raiz = os.path.dirname(diretorio_script)
     caminho_excel = os.path.join(diretorio_raiz, "Data", "Jogos Serra.xlsx")
@@ -292,19 +293,19 @@ try:
     df.columns = [str(col).strip().upper() for col in df.columns]
     df['DATA'] = pd.to_datetime(df['DATA'])
 
-    # --- 2. ESCUDO (Correção do erro 'non-int of type float') ---
+    # --- 2. ESCUDO (Resolução definitiva do erro 'non-int') ---
     try:
         caminho_escudo = os.path.join(diretorio_raiz, "IMAGES", "Escudo Serra Branca.PNG")
         if os.path.exists(caminho_escudo):
             img = Image.open(caminho_escudo)
 
-            # CORREÇÃO: Usamos // para divisão inteira ou int() no resultado
+            # CORREÇÃO: Forçamos o resultado a ser um número INTEIRO
             largura_original = img.size
             nova_largura = int(largura_original * 0.75)
 
             st.sidebar.image(img, width=nova_largura)
     except Exception as e:
-        st.sidebar.error(f"Erro ao processar imagem: {e}")
+        st.sidebar.error(f"Erro na imagem: {e}")
 
     # --- 3. FILTROS ---
     st.sidebar.header("Filtros")
@@ -313,10 +314,11 @@ try:
 
     df_partida = df[df['DATA'].dt.strftime('%d/%m/%Y') == data_sel_str]
 
-    # --- 4. ÁREA PRINCIPAL (Correção do erro de lista de 'BOTAFOGO') ---
+    # --- 4. ÁREA PRINCIPAL (Resolução do erro iLocIndexer) ---
     if not df_partida.empty:
-        # CORREÇÃO: Pegamos apenas o primeiro valor (.iloc) da coluna em vez da série toda
-        nome_adv = df_partida['ADVERSARIO'].iloc
+        # CORREÇÃO: Pegamos o VALOR da primeira linha da coluna adversário
+        # .values garante que pegamos o texto e não o objeto de busca
+        nome_adv = df_partida['ADVERSARIO'].values
         st.info(f"🏟️ Partida: {nome_adv}")
 
         tab1, tab2 = st.tabs(["👤 Desempenho Atleta", "👥 Comparativo Equipe"])
@@ -330,10 +332,10 @@ try:
             AbaDesempenho(df_partida, df, atleta_sel).render()
 
         with tab2:
-            # Aqui você pode chamar a lógica daquela tabela estilo Excel que planejou
+            # Aqui entrará a tabela de médias estilo Excel que você planejou
             AbaEquipe(df_partida).render()
     else:
-        st.warning("Nenhum dado encontrado para esta data.")
+        st.warning("Selecione uma data válida nos filtros.")
 
 except Exception as e:
-    st.error(f"Erro crítico no sistema: {e}")
+    st.error(f"Erro crítico: {e}")
