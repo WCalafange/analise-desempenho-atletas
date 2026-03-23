@@ -6,14 +6,14 @@ import os
 from PIL import Image
 
 #EQUIPE
-#Escala de cores para posicoes
-#aba primeira
-#editar data sem horario
 #Comparar indices igual na planilha
 #Adicionar filtro de geral para todas as partidas para comparar todos os jogos, e nao apenas o jogo a jogo
+#Porque aparecem duas tabelas
+#Corrigir erro
+#Numeros sem casa decimal
+
 
 #ARQUIVO
-#Enviar dash
 #Colocar fotos dos jogadores
 
 # Organizar código ( modularizar )
@@ -21,35 +21,35 @@ from PIL import Image
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(layout="wide", page_title="Análise de Desempenho")
 
-# CSS para cores
+# CSS corrigido
 st.markdown(
     """
     <style>
-    /* 1. Fundo Principal (O tom mais escuro) */
+    /* 1. Fundo Principal */
     .stApp {
         background-color: #001524; 
     }
 
     /* 2. Caixa de Informações (st.info) */
     div[data-testid="stNotification"] {
-        background-color: #0A243D; /* Azul mais claro/médio */
+        background-color: #0A243D;
         color: white;
         border: none;
     }
 
-    /* 3. Caixas de Seleção (Selectbox) e Inputs */
+    /* 3. Caixas de Seleção */
     div[data-baseweb="select"] > div {
         background-color: #0A243D !important;
         color: white !important;
-        border: 1px solid #32CD32; /* Borda verde limão para destacar */
+        border: 1px solid #32CD32 !important;
     }
 
-    /* 4. Barra Lateral (Sidebar) */
+    /* 4. Barra Lateral */
     [data-testid="stSidebar"] {
         background-color: #001524;
     }
 
-    /* 5. Títulos em Verde Limão */
+    /* 5. Títulos */
     h1, h2, h3 {
         color: #32CD32 !important;
     }
@@ -58,12 +58,16 @@ st.markdown(
     .stTabs [data-baseweb="tab"] {
         color: white !important;
     }
-    
-    /* 7. Remover toolbar */
+
+    /* 7. CORREÇÃO DO HEADER E BOTÃO */
     header[data-testid="stHeader"] {
-    visibility: hidden;
-    height: 0%;
-}
+        visibility: visible !important;
+        background: rgba(0,0,0,0) !important; /* Deixa o fundo do topo transparente */
+    }
+
+    [data-testid="stSidebarCollapseButton"] {
+        color: #32CD32 !important; /* Botão em verde limão para combinar */
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -139,7 +143,9 @@ class AbaDesempenho:
             fig_colunas.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
             fig_colunas.update_layout(xaxis_tickangle=-45, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                                       font=dict(color='white'))
-            st.plotly_chart(fig_colunas, use_container_width=True)
+            fig_colunas.update_xaxes(fixedrange=True)
+            fig_colunas.update_yaxes(fixedrange=True)
+            st.plotly_chart(fig_colunas, use_container_width=True, config={'displayModeBar': False})
 
             # 2. Evolução Temporal
             st.subheader("Evolução do Índice")
@@ -178,15 +184,17 @@ class AbaDesempenho:
                 xaxis=dict(
                     type='category',
                     title_text='DATA',
-                    gridcolor='rgba(255, 255, 255, 0.1)'
+                    gridcolor='rgba(255, 255, 255, 0.1)',
+                    fixedrange=True
                 ),
                 yaxis=dict(
                     title_text="ÍNDICE",
                     gridcolor='rgba(255, 255, 255, 0.1)',
-                    zerolinecolor='rgba(255, 255, 255, 0.2)'
+                    zerolinecolor='rgba(255, 255, 255, 0.2)',
+                    fixedrange=True
                 ),
                 showlegend=True,
-                margin=dict(t=10)
+                margin=dict(t=10),
             )
 
             st.plotly_chart(fig_evolucao, use_container_width=True)
@@ -237,7 +245,8 @@ class AbaDesempenho:
 
                         xaxis=dict(
                             showgrid=False,
-                            tickfont=dict(size=10, color='gray')
+                            tickfont=dict(size=10, color='gray'),
+                            fixedrange=True
                         ),
 
                         yaxis=dict(
@@ -245,7 +254,8 @@ class AbaDesempenho:
                             gridcolor='rgba(0, 0, 0, 0.15)',
                             showticklabels=False,
                             zeroline=False,
-                            range=[df_historico[metrica].min() * 0.7, df_historico[metrica].max() * 1.3]
+                            range=[df_historico[metrica].min() * 0.7, df_historico[metrica].max() * 1.3],
+                            fixedrange=True
                         ),
                     )
 
@@ -270,14 +280,88 @@ class AbaDesempenho:
 
 
 class AbaEquipe:
-    def __init__(self, df_partida):
-        self.df = df_partida
+    def __init__(self, df_completo):
+        # Recebemos o dataframe total para filtrar dentro da aba
+        self.df_geral = df_completo
 
     def render(self):
         st.header("🏆 Comparativo da Equipe")
-        metric_pos = st.selectbox("Métrica para comparar posições", ['INDICE', 'ACOES'])
+
+        # --- FILTROS EXCLUSIVOS DA ABA ---
+        # Criamos colunas para os filtros ficarem lado a lado em cima da tabela
+        f1, f2, f3 = st.columns(3)
+
+        with f1:
+            locais = ["Todos"] + sorted(self.df_geral['LOCAL'].unique().tolist())
+            local_sel = st.selectbox("Filtrar Local", locais, key="filtro_local_aba")
+
+        with f2:
+            advs = ["Todos"] + sorted(self.df_geral['ADVERSARIO'].unique().tolist())
+            adv_sel = st.selectbox("Filtrar Adversário", advs, key="filtro_adv_aba")
+
+        with f3:
+            datas = ["Todas"] + sorted(self.df_geral['DATA'].dt.strftime('%d/%m/%Y').unique().tolist())
+            data_sel = st.selectbox("Filtrar Data", datas, key="filtro_data_aba")
+
+        # --- LÓGICA DE FILTRAGEM ---
+        df_filtrado = self.df_geral.copy()
+
+        if local_sel != "Todos":
+            df_filtrado = df_filtrado[df_filtrado['LOCAL'] == local_sel]
+        if adv_sel != "Todos":
+            df_filtrado = df_filtrado[df_filtrado['ADVERSARIO'] == adv_sel]
+        if data_sel != "Todas":
+            df_filtrado = df_filtrado[df_filtrado['DATA'].dt.strftime('%d/%m/%Y') == data_sel]
+
+        # --- RENDERIZAÇÃO DA TABELA ---
+        if not df_filtrado.empty:
+            df_tab = df_filtrado.copy()
+            df_tab['DATA'] = df_tab['DATA'].dt.strftime('%d/%m/%Y')
+
+            tabela_pivot = df_tab.pivot_table(
+                index=['LOCAL', 'DATA', 'ADVERSARIO', 'POSICAO'],
+                values=['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS', '% DISPUTAS GANHAS'],
+                aggfunc='mean'
+            )
+
+            # Reordenar para o ÍNDICE vir logo após POSIÇÃO
+            colunas_ordem = ['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS', '% DISPUTAS GANHAS']
+            tabela_pivot = tabela_pivot.reindex(columns=colunas_ordem)
+
+            styled_df = tabela_pivot.style.background_gradient(
+                cmap='RdYlGn',
+                subset=['INDICE']
+            ).format(precision=1)
+
+            st.dataframe(styled_df, use_container_width=True)
+        else:
+            st.warning("Nenhum dado encontrado para os filtros selecionados.")
+
+
+        #Grafico de colunas
+        st.dataframe(styled_df, use_container_width=True)
+        metric_pos = st.selectbox("Métrica para comparar posições", ['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS',
+                                                                     '% DISPUTAS GANHAS', 'PERDA DA BOLA',
+                                                                     'RETOMADA DE POSSE', 'BOLA RECUPERADA'])
         df_posicoes = self.df.groupby('POSICAO')[metric_pos].mean().sort_values(ascending=False).reset_index()
-        fig_pos = px.bar(df_posicoes, x='POSICAO', y=metric_pos, color='POSICAO')
+        fig_pos = px.bar(df_posicoes, x='POSICAO', y=metric_pos, color="POSICAO",
+             # Se você quiser definir a ordem exata das posições com as cores:
+             color_discrete_map={
+                 'Lateral': '#44FFBB',  # Azul Piscina Claro
+                 'Zagueiro': '#33CCFF',     # Azul Céu
+                 'Meia': '#FFD700',  # Ouro Sutil
+                 'Atacante': '#FF5555', # Vermelho Suave
+                 'Extremo': '#DDA0DD',  # Ameixa
+                 'Volante': '#99FF33'  # Lima Sutil)
+             }
+                         )
+        fig_pos.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white'),
+            xaxis=dict(fixedrange=True),
+            yaxis=dict(fixedrange=True)
+        )
         st.plotly_chart(fig_pos)
 
 
@@ -315,10 +399,13 @@ try:
 
     # --- 4. ÁREA PRINCIPAL (Resolução do erro iLocIndexer) ---
     if not df_partida.empty:
-        nome_adv = str(df_partida['ADVERSARIO'].iloc)
-        st.info(f"🏟️ Partida: {nome_adv}")
+        nome_adv = str(df_partida['ADVERSARIO'].unique())
+        campeonato = str(df_partida['CAMPEONATO'].unique())
+        rodada = str(df_partida['RODADA'].unique())
 
-        tab1, tab2 = st.tabs(["👤 Desempenho Atleta", "👥 Comparativo Equipe"])
+        st.info(f"🏟️ Partida: {nome_adv} | {campeonato} - {rodada}")
+
+        tab2, tab1 = st.tabs(["👥 Comparativo Equipe", "👤 Desempenho Atleta"])
 
         with tab1:
             atleta_sel = st.selectbox(
@@ -329,8 +416,7 @@ try:
             AbaDesempenho(df_partida, df, atleta_sel).render()
 
         with tab2:
-            # Aqui entrará a tabela de médias estilo Excel que você planejou
-            AbaEquipe(df_partida).render()
+                AbaEquipe(df).render()
     else:
         st.warning("Selecione uma data válida nos filtros.")
 
