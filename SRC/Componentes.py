@@ -70,7 +70,7 @@ class AbaDesempenho:
             posicao_atual = df_atleta['POSICAO'].iloc[0]
 
             # 1. Gráfico de Colunas Agrupadas
-            st.header(f"Comparativo de Fundamentos:{posicao_atual}")
+            st.header(f"Comparativo de Fundamentos: {posicao_atual}")
             metricas_especificas = self.METRICAS_POR_POSICAO.get(posicao_atual, ['INDICE'])
             metricas_especificas = [m for m in metricas_especificas if m in df_atleta.columns]
 
