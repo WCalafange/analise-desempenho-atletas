@@ -21,58 +21,6 @@ from PIL import Image
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(layout="wide", page_title="Análise de Desempenho")
 
-# CSS corrigido
-st.markdown(
-    """
-    <style>
-    /* 1. Fundo Principal */
-    .stApp {
-        background-color: #001524; 
-    }
-
-    /* 2. Caixa de Informações (st.info) */
-    div[data-testid="stNotification"] {
-        background-color: #0A243D;
-        color: white;
-        border: none;
-    }
-
-    /* 3. Caixas de Seleção */
-    div[data-baseweb="select"] > div {
-        background-color: #0A243D !important;
-        color: white !important;
-        border: 1px solid #32CD32 !important;
-    }
-
-    /* 4. Barra Lateral */
-    [data-testid="stSidebar"] {
-        background-color: #001524;
-    }
-
-    /* 5. Títulos */
-    h1, h2, h3 {
-        color: #32CD32 !important;
-    }
-
-    /* 6. Texto das Abas */
-    .stTabs [data-baseweb="tab"] {
-        color: white !important;
-    }
-
-    /* 7. CORREÇÃO DO HEADER E BOTÃO */
-    header[data-testid="stHeader"] {
-        visibility: visible !important;
-        background: rgba(0,0,0,0) !important; /* Deixa o fundo do topo transparente */
-    }
-
-    [data-testid="stSidebarCollapseButton"] {
-        color: #32CD32 !important; /* Botão em verde limão para combinar */
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 
 class AbaDesempenho:
     METRICAS_POR_POSICAO = {
@@ -122,7 +70,7 @@ class AbaDesempenho:
             posicao_atual = df_atleta['POSICAO'].iloc[0]
 
             # 1. Gráfico de Colunas Agrupadas
-            st.subheader(f"Comparativo de Fundamentos: {posicao_atual}")
+            st.markdown("<h3 style='color: #C0C0C0;'>Comparativo de Fundamentos: {posicao_atual}</h3>", unsafe_allow_html=True)
             metricas_especificas = self.METRICAS_POR_POSICAO.get(posicao_atual, ['INDICE'])
             metricas_especificas = [m for m in metricas_especificas if m in df_atleta.columns]
 
@@ -145,10 +93,10 @@ class AbaDesempenho:
                                       font=dict(color='white'))
             fig_colunas.update_xaxes(fixedrange=True)
             fig_colunas.update_yaxes(fixedrange=True)
-            st.plotly_chart(fig_colunas, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig_colunas, use_container_width=True, config={'displayModeBar': False}, key="grafico_barras_atleta")
 
             # 2. Evolução Temporal
-            st.subheader("Evolução do Índice")
+            st.markdown("<h3 style='color: #C0C0C0;'>Evolução do índice</h3>", unsafe_allow_html=True)
 
             # Preparação dos dados
             df_historico = self.df_completo[self.df_completo['ATLETA'] == self.atleta].sort_values('DATA').copy()
@@ -197,7 +145,7 @@ class AbaDesempenho:
                 margin=dict(t=10),
             )
 
-            st.plotly_chart(fig_evolucao, use_container_width=True)
+            st.plotly_chart(fig_evolucao, use_container_width=True, key="grafico_evolucao_atleta")
 
             # --- SEÇÃO DE MINI GRÁFICOS DINÂMICOS (Cards) ---
             st.divider()
@@ -263,11 +211,11 @@ class AbaDesempenho:
                     valor_medio = df_historico[metrica].mean()
                     fig_mini.add_hline(y=valor_medio, line_dash="dot", line_color="rgba(0, 0, 0, 0.1)", line_width=1)
 
-                    st.plotly_chart(fig_mini, use_container_width=True, config={'displayModeBar': False})
+                    st.plotly_chart(fig_mini, use_container_width=True, config={'displayModeBar': False}, key=f"mini_{metrica}")
 
             # 5. Histórico Completo
             st.divider()
-            st.subheader(f"Histórico de Partidas Disputadas por {self.atleta}")
+            st.subheader(f"Dados das Partidas Disputadas por {self.atleta}")
 
             df_display = df_historico.copy()
             df_display['DATA'] = df_display['DATA_STR']  # Usa a data já formatada acima
@@ -320,12 +268,14 @@ class AbaEquipe:
 
             tabela_pivot = df_tab.pivot_table(
                 index=['LOCAL', 'DATA', 'ADVERSARIO', 'POSICAO'],
-                values=['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS', '% DISPUTAS GANHAS'],
+                values=['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS', '% DISPUTAS GANHAS', 'PERDA DA BOLA',
+                                                                     'RETOMADA DE POSSE', 'BOLA RECUPERADA'],
                 aggfunc='mean'
             )
 
             # Reordenar para o ÍNDICE vir logo após POSIÇÃO
-            colunas_ordem = ['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS', '% DISPUTAS GANHAS']
+            colunas_ordem = ['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS', '% DISPUTAS GANHAS', 'PERDA DA BOLA',
+                                                                     'RETOMADA DE POSSE', 'BOLA RECUPERADA']
             tabela_pivot = tabela_pivot.reindex(columns=colunas_ordem)
 
             styled_df = tabela_pivot.style.background_gradient(
@@ -339,11 +289,10 @@ class AbaEquipe:
 
 
         #Grafico de colunas
-        st.dataframe(styled_df, use_container_width=True)
-        metric_pos = st.selectbox("Métrica para comparar posições", ['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS',
+        metric_pos = st.selectbox("Desempenho médio das posições por métrica", ['INDICE', 'ACOES', '% ACOES COM SUCESSO', 'DISPUTAS',
                                                                      '% DISPUTAS GANHAS', 'PERDA DA BOLA',
                                                                      'RETOMADA DE POSSE', 'BOLA RECUPERADA'])
-        df_posicoes = self.df.groupby('POSICAO')[metric_pos].mean().sort_values(ascending=False).reset_index()
+        df_posicoes = self.df_geral.groupby('POSICAO')[metric_pos].mean().sort_values(ascending=False).reset_index()
         fig_pos = px.bar(df_posicoes, x='POSICAO', y=metric_pos, color="POSICAO",
              # Se você quiser definir a ordem exata das posições com as cores:
              color_discrete_map={
@@ -365,7 +314,7 @@ class AbaEquipe:
         st.plotly_chart(fig_pos)
 
 
-# --- EXECUÇÃO PRINCIPAL ---
+'''# --- EXECUÇÃO PRINCIPAL ---
 try:
     # 1. Caminhos Relativos (Essencial para o Deploy funcionar)
     diretorio_script = os.path.dirname(os.path.abspath(__file__))
@@ -421,4 +370,4 @@ try:
         st.warning("Selecione uma data válida nos filtros.")
 
 except Exception as e:
-    st.error(f"Erro crítico: {e}")
+    st.error(f"Erro crítico: {e}")'''
