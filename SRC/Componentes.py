@@ -70,7 +70,7 @@ class AbaDesempenho:
             posicao_atual = df_atleta['POSICAO'].iloc[0]
 
             # 1. Gráfico de Colunas Agrupadas
-            st.markdown("<h3 style='color: #C0C0C0;'>Comparativo de Fundamentos: {posicao_atual}</h3>", unsafe_allow_html=True)
+            st.header(f"Comparativo de Fundamentos:{posicao_atual}")
             metricas_especificas = self.METRICAS_POR_POSICAO.get(posicao_atual, ['INDICE'])
             metricas_especificas = [m for m in metricas_especificas if m in df_atleta.columns]
 
@@ -312,62 +312,3 @@ class AbaEquipe:
             yaxis=dict(fixedrange=True)
         )
         st.plotly_chart(fig_pos)
-
-
-'''# --- EXECUÇÃO PRINCIPAL ---
-try:
-    # 1. Caminhos Relativos (Essencial para o Deploy funcionar)
-    diretorio_script = os.path.dirname(os.path.abspath(__file__))
-    diretorio_raiz = os.path.dirname(diretorio_script)
-    caminho_excel = os.path.join(diretorio_raiz, "Data", "Jogos Serra.xlsx")
-
-    df = pd.read_excel(caminho_excel)
-    df.columns = [str(col).strip().upper() for col in df.columns]
-    df['DATA'] = pd.to_datetime(df['DATA'])
-
-    # --- 2. ESCUDO (Resolução definitiva do erro 'non-int') ---
-    try:
-        caminho_escudo = os.path.join(diretorio_raiz, "IMAGES", "Escudo Serra Branca.PNG")
-        if os.path.exists(caminho_escudo):
-            img = Image.open(caminho_escudo)
-
-            # Renderiza a imagem com largura fixa de 220 pixels
-            # O Streamlit ajusta a altura automaticamente para manter a proporção
-            st.sidebar.image(img, width=220)
-        else:
-            st.sidebar.warning("Arquivo de escudo não encontrado no caminho especificado.")
-    except Exception as e:
-        st.sidebar.error(f"Erro na imagem: {e}")
-
-    # --- 3. FILTROS ---
-    st.sidebar.header("Filtros")
-    data_opcoes = df['DATA'].dt.strftime('%d/%m/%Y').unique()
-    data_sel_str = st.sidebar.selectbox("Selecione a Data", data_opcoes, key="data_filtro")
-
-    df_partida = df[df['DATA'].dt.strftime('%d/%m/%Y') == data_sel_str]
-
-    # --- 4. ÁREA PRINCIPAL (Resolução do erro iLocIndexer) ---
-    if not df_partida.empty:
-        nome_adv = str(df_partida['ADVERSARIO'].unique())
-        campeonato = str(df_partida['CAMPEONATO'].unique())
-        rodada = str(df_partida['RODADA'].unique())
-
-        st.info(f"🏟️ Partida: {nome_adv} | {campeonato} - {rodada}")
-
-        tab2, tab1 = st.tabs(["👥 Comparativo Equipe", "👤 Desempenho Atleta"])
-
-        with tab1:
-            atleta_sel = st.selectbox(
-                "Selecione o Atleta",
-                sorted(df_partida['ATLETA'].unique()),
-                key="atleta_sel_aba"
-            )
-            AbaDesempenho(df_partida, df, atleta_sel).render()
-
-        with tab2:
-                AbaEquipe(df).render()
-    else:
-        st.warning("Selecione uma data válida nos filtros.")
-
-except Exception as e:
-    st.error(f"Erro crítico: {e}")'''
