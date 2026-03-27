@@ -86,7 +86,7 @@ try:
             # INSTANCIAÇÃO: Passamos (DataFrame da Partida, DataFrame Completo, Nome do Atleta)
             analise = AbaDesempenho(df_partida, df, atleta_sel)
 
-            # EXECUÇÃO: Chamamos o método render que contém os gráficos
+            # EXECUÇÃO
             analise.render()
         else:
             st.warning("Selecione uma data válida.")
